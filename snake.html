@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Evolution</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #3b82f6;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--darker), var(--dark));
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+        }
+        
+        .snake-head {
+            position: relative;
+        }
+        
+        .snake-head::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .snake-head.right::after {
+            top: 25%;
+            right: 5px;
+        }
+        
+        .snake-head.left::after {
+            top: 25%;
+            left: 5px;
+        }
+        
+        .snake-head.up::after {
+            top: 5px;
+            left: 25%;
+        }
+        
+        .snake-head.down::after {
+            bottom: 5px;
+            left: 25%;
+        }
+        
+        .snake-head::before {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .snake-head.right::before {
+            top: 75%;
+            right: 5px;
+        }
+        
+        .snake-head.left::before {
+            top: 75%;
+            left: 5px;
+        }
+        
+        .snake-head.up::before {
+            top: 5px;
+            right: 25%;
+        }
+        
+        .snake-head.down::before {
+            bottom: 5px;
+            right: 25%;
+        }
+        
+        .level-up {
+            animation: levelUp 1s ease-out;
+        }
+        
+        @keyframes levelUp {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+            opacity: 0;
+        }
+        
+        #gameCanvas {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .score-badge {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+    
+    <div class="text-center mb-6">
+        <h1 class="text-5xl font-bold mb-2 glow-text">🐍 Snake Evolution 🐍</h1>
+        <p class="text-lg opacity-80">Use WASD or arrow keys to control the snake</p>
+    </div>
+    
+    <!-- Game Info Panel -->
+    <div class="glass-card p-4 mb-4 w-full max-w-md flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <div class="text-center">
+                <p class="text-sm opacity-80">Level</p>
+                <p id="levelDisplay" class="text-2xl font-bold">1</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm opacity-80">Score</p>
+                <p id="scoreDisplay" class="text-2xl font-bold score-badge">0</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm opacity-80">Time</p>
+                <p id="timeDisplay" class="text-2xl font-bold">0s</p>
+            </div>
+        </div>
+        
+        <div class="w-32">
+            <p class="text-sm opacity-80 mb-1">XP to next level</p>
+            <div class="progress-bar">
+                <div id="xpBar" class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" width="400" height="400" class="mb-4 hidden"></canvas>
+    
+    <!-- Difficulty Selection Modal -->
+    <div id="difficultyModal" class="modal-overlay active">
+        <div class="modal-content glass-card p-8 rounded-xl w-full max-w-md">
+            <h2 class="text-3xl font-bold mb-6 text-center glow-text">Select Difficulty</h2>
+            
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <button class="difficulty-btn btn-primary py-3 px-4 rounded-lg" data-speed="200">
+                    <span class="block text-xl">Easy</span>
+                    <span class="text-sm opacity-80">Slow speed</span>
+                </button>
+                <button class="difficulty-btn btn-primary py-3 px-4 rounded-lg" data-speed="120">
+                    <span class="block text-xl">Medium</span>
+                    <span class="text-sm opacity-80">Balanced</span>
+                </button>
+                <button class="difficulty-btn btn-primary py-3 px-4 rounded-lg" data-speed="60">
+                    <span class="block text-xl">Hard</span>
+                    <span class="text-sm opacity-80">Fast speed</span>
+                </button>
+            </div>
+            
+            <button id="startBtn" class="btn-secondary w-full py-3 rounded-lg text-lg font-semibold" disabled>
+                Start Game
+            </button>
+        </div>
+    </div>
+    
+    <!-- Game Controls -->
+    <div id="gameControls" class="hidden mt-4">
+        <button id="endBtn" class="btn-danger py-2 px-6 rounded-lg text-lg font-semibold">
+            End Game
+        </button>
+    </div>
+    
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal-overlay">
+        <div class="modal-content glass-card p-8 rounded-xl w-full max-w-md">
+            <h2 class="text-3xl font-bold mb-4 text-center text-red-400">Game Over</h2>
+            <p id="endMessage" class="text-center text-xl mb-2"></p>
+            
+            <div class="my-6 space-y-2">
+                <div class="flex justify-between">
+                    <span class="opacity-80">Final Score:</span>
+                    <span id="finalScore" class="font-bold">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="opacity-80">Highest Level:</span>
+                    <span id="finalLevel" class="font-bold">1</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="opacity-80">Time Survived:</span>
+                    <span id="finalTime" class="font-bold">0s</span>
+                </div>
+            </div>
+            
+            <button id="restartBtn" class="btn-primary w-full py-3 rounded-lg text-lg font-semibold mt-4">
+                Play Again
+            </button>
+        </div>
+    </div>
+    
+    <!-- Audio Elements -->
+    <audio id="eatSound" src="r1.mp3" preload="auto"></audio>
+    <audio id="levelUpSound" src="r2.mp3" preload="auto"></audio>
+    <audio id="gameOverSound" src="r3.mp3" preload="auto"></audio>
+    
+    <script>
+        // Game Elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+        const canvasSize = 400;
+        
+        // Game State
+        let snake = [];
+        let direction = 'RIGHT';
+        let food = null;
+        let score = 0;
+        let level = 1;
+        let xp = 0;
+        let xpToNextLevel = 5;
+        let game = null;
+        let timeSurvived = 0;
+        let timerInterval = null;
+        let selectedSpeed = null;
+        
+        // UI Elements
+        const difficultyModal = document.getElementById('difficultyModal');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const startBtn = document.getElementById('startBtn');
+        const endBtn = document.getElementById('endBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        const gameControls = document.getElementById('gameControls');
+        
+        // Display Elements
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const xpBar = document.getElementById('xpBar');
+        
+        // End Game Display
+        const endMessage = document.getElementById('endMessage');
+        const finalScore = document.getElementById('finalScore');
+        const finalLevel = document.getElementById('finalLevel');
+        const finalTime = document.getElementById('finalTime');
+        
+        // Audio Elements
+        const eatSound = document.getElementById('eatSound');
+        const levelUpSound = document.getElementById('levelUpSound');
+        const gameOverSound = document.getElementById('gameOverSound');
+        
+        // Difficulty Selection
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Reset all buttons
+                difficultyBtns.forEach(b => {
+                    b.classList.remove('ring-4', 'ring-yellow-400');
+                    b.classList.add('btn-primary');
+                });
+                
+                // Highlight selected button
+                btn.classList.remove('btn-primary');
+                btn.classList.add('ring-4', 'ring-yellow-400');
+                
+                selectedSpeed = parseInt(btn.dataset.speed);
+                startBtn.disabled = false;
+            });
+        });
+        
+        // Start Game
+        startBtn.addEventListener('click', () => {
+            if (!selectedSpeed) return;
+            
+            difficultyModal.classList.remove('active');
+            canvas.classList.remove('hidden');
+            gameControls.classList.remove('hidden');
+            
+            startGame(selectedSpeed);
+            createParticles(50);
+        });
+        
+        // End Game
+        endBtn.addEventListener('click', () => {
+            endGame("🛑 You ended the game");
+        });
+        
+        // Restart Game
+        restartBtn.addEventListener('click', () => {
+            gameOverModal.classList.remove('active');
+            difficultyModal.classList.add('active');
+            canvas.classList.add('hidden');
+            gameControls.classList.add('hidden');
+            
+            resetGame();
+            createParticles(50);
+        });
+        
+        // Initialize Game
+        function resetGame() {
+            snake = [];
+            direction = 'RIGHT';
+            food = null;
+            score = 0;
+            level = 1;
+            xp = 0;
+            xpToNextLevel = 5;
+            timeSurvived = 0;
+            
+            updateDisplays();
+            clearInterval(game);
+            clearInterval(timerInterval);
+            
+            selectedSpeed = null;
+            startBtn.disabled = true;
+            
+            // Reset difficulty buttons
+            difficultyBtns.forEach(b => {
+                b.classList.remove('ring-4', 'ring-yellow-400');
+                b.classList.add('btn-primary');
+            });
+        }
+        
+        function startGame(speed) {
+            // Initialize snake
+            snake = [
+                { x: 200, y: 200 },
+                { x: 180, y: 200 },
+                { x: 160, y: 200 }
+            ];
+            
+            direction = 'RIGHT';
+            food = randomFoodPosition();
+            
+            // Reset stats
+            score = 0;
+            level = 1;
+            xp = 0;
+            xpToNextLevel = 5;
+            timeSurvived = 0;
+            
+            updateDisplays();
+            
+            // Start game loop
+            game = setInterval(gameLoop, speed);
+            
+            // Start timer
+            timerInterval = setInterval(() => {
+                timeSurvived++;
+                timeDisplay.textContent = `${timeSurvived}s`;
+            }, 1000);
+            
+            // Draw initial state
+            draw();
+        }
+        
+        function updateDisplays() {
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            timeDisplay.textContent = `${timeSurvived}s`;
+            xpBar.style.width = `${(xp / xpToNextLevel) * 100}%`;
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+            
+            // Draw food
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(food.x + box/2, food.y + box/2, box/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw snake body
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Draw head with eyes
+                    ctx.fillStyle = '#10b981';
+                    ctx.fillRect(segment.x, segment.y, box, box);
+                    
+                    // Add eyes based on direction
+                    ctx.fillStyle = 'white';
+                    if (direction === 'RIGHT') {
+                        ctx.fillRect(segment.x + box - 8, segment.y + 5, 4, 4);
+                        ctx.fillRect(segment.x + box - 8, segment.y + box - 9, 4, 4);
+                    } else if (direction === 'LEFT') {
+                        ctx.fillRect(segment.x + 4, segment.y + 5, 4, 4);
+                        ctx.fillRect(segment.x + 4, segment.y + box - 9, 4, 4);
+                    } else if (direction === 'UP') {
+                        ctx.fillRect(segment.x + 5, segment.y + 4, 4, 4);
+                        ctx.fillRect(segment.x + box - 9, segment.y + 4, 4, 4);
+                    } else if (direction === 'DOWN') {
+                        ctx.fillRect(segment.x + 5, segment.y + box - 8, 4, 4);
+                        ctx.fillRect(segment.x + box - 9, segment.y + box - 8, 4, 4);
+                    }
+                } else {
+                    // Draw body segments
+                    ctx.fillStyle = index % 2 === 0 ? '#10b981' : '#0ea5e9';
+                    ctx.fillRect(segment.x, segment.y, box, box);
+                    
+                    // Add some detail to body segments
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.fillRect(segment.x + 4, segment.y + 4, box - 8, box - 8);
+                }
+            });
+        }
+        
+        function randomFoodPosition() {
+            let position;
+            while (true) {
+                position = {
+                    x: Math.floor(Math.random() * (canvasSize / box)) * box,
+                    y: Math.floor(Math.random() * (canvasSize / box)) * box
+                };
+                
+                // Make sure food doesn't spawn on snake
+                if (!snake.some(segment => segment.x === position.x && segment.y === position.y)) {
+                    return position;
+                }
+            }
+        }
+        
+        function gameLoop() {
+            // Create new head
+            const head = { ...snake[0] };
+            
+            // Move head based on direction
+            if (direction === 'LEFT') head.x -= box;
+            else if (direction === 'RIGHT') head.x += box;
+            else if (direction === 'UP') head.y -= box;
+            else if (direction === 'DOWN') head.y += box;
+            
+            // Wrap around if snake goes off canvas
+            if (head.x < 0) head.x = canvasSize - box;
+            else if (head.x >= canvasSize) head.x = 0;
+            if (head.y < 0) head.y = canvasSize - box;
+            else if (head.y >= canvasSize) head.y = 0;
+            
+            // Check for collision with self
+            if (snake.some((segment, index) => index !== 0 && segment.x === head.x && segment.y === head.y)) {
+                endGame("💀 You collided with yourself!");
+                return;
+            }
+            
+            // Add new head
+            snake.unshift(head);
+            
+            // Check if snake ate food
+            if (head.x === food.x && head.y === food.y) {
+                // Play eat sound
+                eatSound.currentTime = 0;
+                eatSound.play();
+                
+                // Increase score and XP
+                score += level; // Higher levels give more points per food
+                xp += 1;
+                
+                // Check for level up
+                if (xp >= xpToNextLevel) {
+                    levelUp();
+                }
+                
+                // Generate new food
+                food = randomFoodPosition();
+                
+                // Update displays
+                updateDisplays();
+                
+                // Create eating effect
+                createEatingEffect(head.x, head.y);
+            } else {
+                // Remove tail if no food was eaten
+                snake.pop();
+            }
+            
+            // Redraw game
+            draw();
+        }
+        
+        function levelUp() {
+            level++;
+            xp = 0;
+            xpToNextLevel = Math.floor(xpToNextLevel * 1.5); // XP requirement increases each level
+            
+            // Play level up sound
+            levelUpSound.currentTime = 0;
+            levelUpSound.play();
+            
+            // Level up animation
+            levelDisplay.classList.add('level-up');
+            setTimeout(() => {
+                levelDisplay.classList.remove('level-up');
+            }, 1000);
+            
+            // Create confetti effect
+            createConfetti();
+            
+            // Update displays
+            updateDisplays();
+        }
+        
+        function endGame(message) {
+            clearInterval(game);
+            clearInterval(timerInterval);
+            
+            // Play game over sound
+            gameOverSound.currentTime = 0;
+            gameOverSound.play();
+            
+            endMessage.textContent = message;
+            finalScore.textContent = score;
+            finalLevel.textContent = level;
+            finalTime.textContent = `${timeSurvived}s`;
+            
+            gameOverModal.classList.add('active');
+            canvas.classList.add('hidden');
+            gameControls.classList.add('hidden');
+        }
+        
+        // Keyboard Controls
+        window.addEventListener('keydown', e => {
+            if (!game) return;
+            
+            const key = e.key.toLowerCase();
+            
+            // Prevent opposite direction movement
+            if ((key === 'arrowleft' || key === 'a') && direction !== 'RIGHT') 
+                direction = 'LEFT';
+            else if ((key === 'arrowup' || key === 'w') && direction !== 'DOWN') 
+                direction = 'UP';
+            else if ((key === 'arrowright' || key === 'd') && direction !== 'LEFT') 
+                direction = 'RIGHT';
+            else if ((key === 'arrowdown' || key === 's') && direction !== 'UP') 
+                direction = 'DOWN';
+        });
+        
+        // Touch Controls for Mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', e => {
+            if (!game) return;
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, false);
+        
+        canvas.addEventListener('touchmove', e => {
+            if (!game) return;
+            e.preventDefault();
+            
+            const touchEndX = e.touches[0].clientX;
+            const touchEndY = e.touches[0].clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            // Determine swipe direction
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0 && direction !== 'LEFT') direction = 'RIGHT';
+                else if (dx < 0 && direction !== 'RIGHT') direction = 'LEFT';
+            } else {
+                if (dy > 0 && direction !== 'UP') direction = 'DOWN';
+                else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
+            }
+        }, false);
+        
+        // Visual Effects
+        function createParticles(count) {
+            const container = document.getElementById('particles');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random properties
+                const size = Math.random() * 5 + 1;
+                const posX = Math.random() * window.innerWidth;
+                const posY = Math.random() * window.innerHeight;
+                const opacity = Math.random() * 0.5 + 0.1;
+                const animationDuration = Math.random() * 10 + 5;
+                
+                // Apply styles
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}px`;
+                particle.style.top = `${posY}px`;
+                particle.style.opacity = opacity;
+                particle.style.animation = `float ${animationDuration}s linear infinite`;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        function createEatingEffect(x, y) {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Position at food location (converted to screen coordinates)
+                const rect = canvas.getBoundingClientRect();
+                const posX = rect.left + x + box/2;
+                const posY = rect.top + y + box/2;
+                
+                // Random properties
+                const size = Math.random() * 3 + 1;
+                const color = `hsl(${Math.random() * 60 + 350}, 100%, 70%)`;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 50 + 20;
+                const duration = Math.random() * 1 + 0.5;
+                
+                // Calculate final position
+                const endX = posX + Math.cos(angle) * distance;
+                const endY = posY + Math.sin(angle) * distance;
+                
+                // Apply styles
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}px`;
+                particle.style.top = `${posY}px`;
+                particle.style.backgroundColor = color;
+                particle.style.borderRadius = '50%';
+                particle.style.transform = `translate(${endX - posX}px, ${endY - posY}px)`;
+                particle.style.opacity = 0;
+                particle.style.transition = `all ${duration}s ease-out`;
+                
+                document.body.appendChild(particle);
+                
+                // Trigger animation
+                setTimeout(() => {
+                    particle.style.transform = 'translate(0, 0)';
+                    particle.style.opacity = 1;
+                    
+                    setTimeout(() => {
+                        particle.style.transform = `translate(${endX - posX}px, ${endY - posY}px)`;
+                        particle.style.opacity = 0;
+                        
+                        // Remove after animation
+                        setTimeout(() => {
+                            particle.remove();
+                        }, duration * 1000);
+                    }, 10);
+                }, 10);
+            }
+        }
+        
+        function createConfetti() {
+            const colors = ['#f43f5e', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Random properties
+                const size = Math.random() * 10 + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const posX = Math.random() * window.innerWidth;
+                const posY = -20;
+                const angle = Math.random() * 360;
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random() * 0.5;
+                
+                // Apply styles
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.left = `${posX}px`;
+                confetti.style.top = `${posY}px`;
+                confetti.style.backgroundColor = color;
+                confetti.style.transform = `rotate(${angle}deg)`;
+                
+                // Random shape
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                } else {
+                    confetti.style.borderRadius = '0';
+                }
+                
+                document.body.appendChild(confetti);
+                
+                // Animate
+                setTimeout(() => {
+                    confetti.style.opacity = 1;
+                    confetti.style.transform = `translate(${Math.random() * 200 - 100}px, ${window.innerHeight + 20}px) rotate(${angle + 360}deg)`;
+                    confetti.style.transition = `all ${duration}s ease-in ${delay}s`;
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, (duration + delay) * 1000);
+                }, 10);
+            }
+        }
+        
+        // Initialize particles
+        createParticles(30);
+        
+        // Add floating animation
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes float {
+                0% {
+                    transform: translateY(0) translateX(0);
+                    opacity: 1;
+                }
+                50% {
+                    transform: translateY(-20px) translateX(10px);
+                    opacity: 0.8;
+                }
+                100% {
+                    transform: translateY(0) translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnakeLeveling</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6c5ce7;
+      --primary-dark: #5649c0;
+      --secondary: #00cec9;
+      --dark: #2d3436;
+      --light: #f5f6fa;
+      --accent: #fd79a8;
+      --success: #00b894;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--light);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Solar system background */
+    .solar-system {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .sun {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, #ffde00, #ff8c00);
+      border-radius: 50%;
+      box-shadow: 0 0 50px #ff8c00, 0 0 100px #ff4500;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      animation: pulse 4s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 50px #ff8c00, 0 0 100px #ff4500; }
+      100% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 70px #ff8c00, 0 0 140px #ff4500; }
+    }
+
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      transform-origin: center;
+      z-index: 2;
+    }
+
+    .orbit {
+      position: absolute;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform-origin: center;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Floating particles */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Main container */
+    .container {
+      background: rgba(30, 30, 47, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(108, 92, 231, 0.1),
+        rgba(0, 206, 201, 0.1),
+        rgba(253, 121, 168, 0.1)
+      );
+      transform: rotate(30deg);
+      z-index: -1;
+      animation: shine 8s infinite linear;
+    }
+
+    @keyframes shine {
+      0% { transform: rotate(30deg) translate(-10%, -10%); }
+      50% { transform: rotate(30deg) translate(10%, 10%); }
+      100% { transform: rotate(30deg) translate(-10%, -10%); }
+    }
+
+    /* Logo and title */
+    .logo {
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .logo-icon {
+      font-size: 3.5rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+      text-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 30px;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(108, 92, 231, 0.6);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Volume control */
+    .volume-control {
+      margin-top: 25px;
+      width: 100%;
+    }
+
+    .volume-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+
+    .slider-container {
+      width: 100%;
+      position: relative;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin-bottom: 5px;
+    }
+
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 10px;
+      border-radius: 10px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      outline: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .slider:hover {
+      opacity: 1;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer a:hover {
+      color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+            
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Solar system background -->
+  <div class="solar-system" id="solar-system">
+    <div class="sun"></div>
+    <!-- Orbits and planets will be added via JavaScript -->
+  </div>
+
+  <!-- Floating particles background -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Main container -->
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">
+        <i class="fas fa-gamepad"></i>
+      </div>
+      <h1>SnakeLeveling</h1>
+      <div class="subtitle">Make by Hứa Mộc (An)</div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="location.href='snake.html'">
+        <i class="fas fa-play"></i> Vào Game
+      </button>
+      <button class="btn btn-secondary" id="toggle-music">
+        <i class="fas fa-music"></i> <span id="music-text">Nhạc Nền</span>
+      </button>
+    </div>
+
+    <div class="volume-control">
+      <div class="volume-label">
+        <i class="fas fa-volume-up"></i> Âm Lượng
+      </div>
+      <div class="slider-container">
+        <input type="range" id="volume-slider" class="slider" min="0" max="1" step="0.01" value="0.7">
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 SnakeLeveling | <a href="#" target="_blank">Hứa Mộc</a></p>
+    </div>
+  </div>
+
+  <audio id="bg-music" src="T2.mp3" loop></audio>
+
+  <script>
+    // Solar system animation
+    const solarSystem = document.getElementById('solar-system');
+    
+    // Enhanced planet data (name, size, distance, speed, color, orbitColor)
+    const planets = [
+      { name: 'mercury', size: 8, distance: 120, speed: 0.04, color: '#a9a9a9', orbitColor: 'rgba(169, 169, 169, 0.1)' },
+      { name: 'venus', size: 12, distance: 160, speed: 0.015, color: '#e6c229', orbitColor: 'rgba(230, 194, 41, 0.1)' },
+      { name: 'earth', size: 12, distance: 200, speed: 0.01, color: '#6b93d6', orbitColor: 'rgba(107, 147, 214, 0.1)' },
+      { name: 'mars', size: 10, distance: 240, speed: 0.008, color: '#c1440e', orbitColor: 'rgba(193, 68, 14, 0.1)' },
+      { name: 'jupiter', size: 24, distance: 300, speed: 0.004, color: '#d8c7a9', orbitColor: 'rgba(216, 199, 169, 0.1)' },
+      { name: 'saturn', size: 20, distance: 360, speed: 0.002, color: '#e4d191', orbitColor: 'rgba(228, 209, 145, 0.1)' },
+      { name: 'uranus', size: 16, distance: 420, speed: 0.001, color: '#d1e7e7', orbitColor: 'rgba(209, 231, 231, 0.1)' },
+      { name: 'neptune', size: 16, distance: 480, speed: 0.0006, color: '#5b5ddf', orbitColor: 'rgba(91, 93, 223, 0.1)' }
+    ];
+
+    // Create orbits and planets with improved visuals
+    planets.forEach((planet, index) => {
+      // Create orbit path
+      const orbit = document.createElement('div');
+      orbit.className = 'orbit';
+      orbit.style.width = `${planet.distance * 2}px`;
+      orbit.style.height = `${planet.distance * 2}px`;
+      orbit.style.borderColor = planet.orbitColor;
+      orbit.style.boxShadow = `0 0 5px ${planet.orbitColor}`;
+      solarSystem.appendChild(orbit);
+      
+      // Create planet
+      const planetElement = document.createElement('div');
+      planetElement.className = 'planet';
+      planetElement.id = planet.name;
+      planetElement.style.width = `${planet.size}px`;
+      planetElement.style.height = `${planet.size}px`;
+      planetElement.style.background = `radial-gradient(circle at 30% 30%, white 0%, ${planet.color} 70%)`;
+      planetElement.style.boxShadow = `0 0 15px ${planet.color}, inset -5px -5px 10px rgba(0,0,0,0.3)`;
+      planetElement.style.top = `50%`;
+      planetElement.style.left = `50%`;
+      planetElement.style.transform = `translate(-50%, -50%) translateX(${planet.distance}px)`;
+      solarSystem.appendChild(planetElement);
+      
+      // Add ring to Saturn with improved styling
+      if (planet.name === 'saturn') {
+        const ring = document.createElement('div');
+        ring.className = 'ring';
+        ring.style.position = 'absolute';
+        ring.style.width = `${planet.size * 2.2}px`;
+        ring.style.height = `${planet.size * 0.6}px`;
+        ring.style.background = 'transparent';
+        ring.style.border = `3px solid #e4d191`;
+        ring.style.borderRadius = '50%';
+        ring.style.transform = 'rotate(20deg)';
+        ring.style.top = `calc(50% - ${planet.size * 0.3}px)`;
+        ring.style.left = `calc(50% - ${planet.size * 1.1}px)`;
+        ring.style.boxShadow = '0 0 10px #e4d191';
+        planetElement.appendChild(ring);
+      }
+      
+      // Add glow effect to all planets
+      const glow = document.createElement('div');
+      glow.style.position = 'absolute';
+      glow.style.width = '100%';
+      glow.style.height = '100%';
+      glow.style.borderRadius = '50%';
+      glow.style.background = `radial-gradient(circle at center, ${planet.color} 0%, transparent 70%)`;
+      glow.style.opacity = '0.5';
+      glow.style.filter = 'blur(5px)';
+      planetElement.appendChild(glow);
+    });
+
+    // Enhanced planet animation with elliptical orbits
+    function animatePlanets() {
+      const time = Date.now() * 0.001; // Get time in seconds
+      
+      planets.forEach((planet, index) => {
+        const planetElement = document.getElementById(planet.name);
+        const angle = time * planet.speed;
+        
+        // Create elliptical orbit (slightly squashed circle)
+        const ellipseRatio = 0.7; // 0.7 makes it more elliptical
+        const x = Math.cos(angle) * planet.distance;
+        const y = Math.sin(angle) * planet.distance * ellipseRatio;
+        
+        // Add slight wobble for more natural movement
+        const wobbleX = Math.sin(time * planet.speed * 2) * 2;
+        const wobbleY = Math.cos(time * planet.speed * 2) * 2;
+        
+        // Add rotation to planets
+        const rotation = angle * 20;
+        
+        planetElement.style.transform = `
+          translate(-50%, -50%) 
+          translate(${x + wobbleX}px, ${y + wobbleY}px)
+          rotate(${rotation}deg)
+        `;
+        
+        // Add pulsing glow effect
+        const glowIntensity = 0.4 + Math.sin(time * 2) * 0.1;
+        planetElement.querySelector('div').style.opacity = glowIntensity;
+      });
+      
+      requestAnimationFrame(animatePlanets);
+    }
+    
+    animatePlanets();
+
+    // Floating particles with improved movement
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 80; // Increased number of particles
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.classList.add('particle');
+      
+      // Random properties with more variety
+      const size = Math.random() * 5 + 1;
+      const posX = Math.random() * window.innerWidth;
+      const posY = Math.random() * window.innerHeight;
+      const delay = Math.random() * 10;
+      const duration = Math.random() * 15 + 15; // Longer duration
+      const opacity = Math.random() * 0.7 + 0.1;
+      const color = `hsl(${Math.random() * 60 + 200}, 80%, 70%)`; // Blueish colors
+      
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${posX}px`;
+      particle.style.top = `${posY}px`;
+      particle.style.animationDelay = `${delay}s`;
+      particle.style.animationDuration = `${duration}s`;
+      particle.style.opacity = opacity;
+      particle.style.background = color;
+      particle.style.boxShadow = `0 0 ${size * 2}px ${color}`;
+      
+      // More complex floating animation
+      const floatX = (Math.random() - 0.5) * 100;
+      const floatY = (Math.random() - 0.5) * 100;
+      
+      particle.style.animation = `
+        float-${i} ${duration}s ease-in-out ${delay}s infinite
+      `;
+      
+      // Create unique animation for each particle
+      const style = document.createElement('style');
+      style.innerHTML = `
+        @keyframes float-${i} {
+          0% {
+            transform: translate(0, 0);
+            opacity: ${opacity};
+          }
+          25% {
+            transform: translate(${floatX * 0.5}px, ${floatY * 0.5}px);
+          }
+          50% {
+            transform: translate(${floatX}px, ${floatY}px);
+            opacity: ${opacity * 1.5};
+          }
+          75% {
+            transform: translate(${floatX * 0.5}px, ${floatY * 0.5}px);
+          }
+          100% {
+            transform: translate(0, 0);
+            opacity: ${opacity};
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      particlesContainer.appendChild(particle);
+    }
+
+    // Music controls
+    const bgMusic = document.getElementById('bg-music');
+    const toggleBtn = document.getElementById('toggle-music');
+    const musicText = document.getElementById('music-text');
+    const volumeSlider = document.getElementById('volume-slider');
+
+    // Try to autoplay music (may be blocked by browser)
+    document.addEventListener('click', () => {
+      if (bgMusic.paused) {
+        bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+      }
+    }, { once: true });
+
+    toggleBtn.addEventListener('click', () => {
+      if (bgMusic.paused) {
+        bgMusic.play();
+        musicText.textContent = 'Tắt nhạc';
+        toggleBtn.innerHTML = '<i class="fas fa-music"></i> <span id="music-text">Tắt nhạc</span>';
+      } else {
+        bgMusic.pause();
+        musicText.textContent = 'Nhạc Nền';
+        toggleBtn.innerHTML = '<i class="fas fa-music"></i> <span id="music-text">Nhạc Nền</span>';
+      }
+    });
+
+    // Adjust volume with smoother transition
+    volumeSlider.addEventListener('input', (e) => {
+      bgMusic.volume = e.target.value;
+      
+      // Smooth transition for volume change
+      bgMusic.style.transition = 'volume 0.3s ease';
+      
+      // Update icon based on volume level
+      const volIcon = document.querySelector('.volume-label i');
+      if (e.target.value == 0) {
+        volIcon.className = 'fas fa-volume-mute';
+      } else if (e.target.value < 0.5) {
+        volIcon.className = 'fas fa-volume-down';
+      } else {
+        volIcon.className = 'fas fa-volume-up';
+      }
+    });
+
+    // Set initial volume
+    bgMusic.volume = volumeSlider.value;
+    
+    // Add parallax effect to solar system on mouse move
+    document.addEventListener('mousemove', (e) => {
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      
+      solarSystem.style.transform = `translate(${x * 20 - 10}px, ${y * 20 - 10}px)`;
+      particlesContainer.style.transform = `translate(${x * 10 - 5}px, ${y * 10 - 5}px)`;
+    });
+  </script>
+</body>
+</html>
